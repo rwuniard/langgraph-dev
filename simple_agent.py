@@ -26,19 +26,17 @@ agent = create_agent(
 
 
 async def stream_agent():
+    """Stream agent responses using pretty_print() for clean formatting."""
     input = {"messages": [{"role": "human", "content": "What is the weather in Tokyo?"}]}
     async for chunk in agent.astream(input, stream_mode="values"):
-        # Extract the last message from the chunk
+        chunk.pretty_print()
+        print("*" * 100)
         if "messages" in chunk and chunk["messages"]:
             last_message = chunk["messages"][-1]
-            # Print AI messages only if they have content
+            # Use built-in pretty_print() method for clean output
             if hasattr(last_message, "type") and last_message.type == "ai":
                 if last_message.content:
-                    print(f"AI: {last_message.content}")
-            elif isinstance(last_message, dict) and last_message.get("role") == "ai":
-                content = last_message.get("content", "")
-                if content:
-                    print(f"AI: {content}")
+                    last_message.pretty_print()
     print()
 
 asyncio.run(stream_agent())

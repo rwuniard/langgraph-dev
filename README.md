@@ -13,6 +13,7 @@ This project provides a foundation for developing AI agents using LangGraph and 
 - **Streaming Support**: Asynchronous streaming of agent responses
 - **OpenAI Integration**: Powered by OpenAI models (GPT-4o-mini)
 - **LangGraph Studio**: Visual debugging and interaction with agent graphs
+- **Inspection Utilities**: Built-in tools to inspect and understand LangGraph object structures
 
 ## Prerequisites
 
@@ -91,6 +92,56 @@ langgraph dev
    - Debug and understand the execution flow
    - Step through agent decision-making processes
 
+### Debugging and Inspection
+
+The project includes utilities to inspect LangGraph object structures for easier debugging.
+
+#### Using Pretty Print
+
+LangChain messages have a built-in `pretty_print()` method for clean output:
+
+```python
+async for chunk in agent.astream(input, stream_mode="values"):
+    if "messages" in chunk and chunk["messages"]:
+        last_message = chunk["messages"][-1]
+        last_message.pretty_print()  # Clean, formatted output
+```
+
+#### Inspection Tools
+
+The `inspector_tools/` directory contains utilities for detailed object inspection:
+
+**Quick Inspection** - See all available inspection methods:
+```bash
+uv run python inspector_tools/quick_inspect.py
+```
+
+**Detailed Example** - Inspect streaming chunks in real-time:
+```bash
+uv run python inspector_tools/inspect_example.py
+```
+
+**Using Utilities in Your Code**:
+```python
+from inspector_tools.inspect_structure import inspect_chunk, inspect_messages
+from pprint import pprint
+
+# Inspect full chunk structure
+inspect_chunk(chunk)
+
+# Inspect just messages
+inspect_messages(chunk)
+
+# Quick inspection with pprint
+pprint(vars(message), depth=2, width=120)
+```
+
+**Available Inspection Methods**:
+1. `inspect_chunk(chunk)` - Full chunk structure with type information
+2. `inspect_messages(chunk)` - Detailed message array inspection
+3. `to_json_serializable(chunk)` - Convert to JSON for file export
+4. `pprint(vars(obj))` - Quick pretty-printed attribute view
+
 ### Example Output
 
 ```
@@ -102,13 +153,17 @@ The weather in Tokyo is sunny.
 
 ```
 langgraph-dev/
-├── simple_agent.py       # Example agent implementation
-├── pyproject.toml        # Project configuration and dependencies
-├── uv.lock              # Locked dependencies
-├── langgraph.json       # LangGraph Studio configuration
-├── .env                 # Environment variables (not tracked)
-├── .python-version      # Python version specification
-└── README.md           # This file
+├── simple_agent.py              # Example agent implementation
+├── inspector_tools/             # Debugging and inspection utilities
+│   ├── inspect_structure.py     # Reusable inspection functions
+│   ├── inspect_example.py       # Working example with agent
+│   └── quick_inspect.py         # Quick inspection methods demo
+├── pyproject.toml               # Project configuration and dependencies
+├── uv.lock                      # Locked dependencies
+├── langgraph.json               # LangGraph Studio configuration
+├── .env                         # Environment variables (not tracked)
+├── .python-version              # Python version specification
+└── README.md                    # This file
 ```
 
 ## Dependencies
@@ -161,9 +216,27 @@ Implement asynchronous streaming for real-time responses:
 
 ```python
 async def stream_agent():
+    """Stream agent responses with clean formatting."""
     input = {"messages": [{"role": "human", "content": "Your query"}]}
     async for chunk in agent.astream(input, stream_mode="values"):
-        print(chunk)
+        if "messages" in chunk and chunk["messages"]:
+            last_message = chunk["messages"][-1]
+            # Use built-in pretty_print() for clean output
+            if hasattr(last_message, "type") and last_message.type == "ai":
+                if last_message.content:
+                    last_message.pretty_print()
+```
+
+**Token-by-Token Streaming** (for real-time typing effect):
+
+```python
+async def stream_tokens():
+    """Stream AI response token by token."""
+    input = {"messages": [{"role": "human", "content": "Your query"}]}
+    async for message_chunk, metadata in agent.astream(input, stream_mode="messages"):
+        if message_chunk.content:
+            print(message_chunk.content, end="", flush=True)
+    print()
 ```
 
 ## License
