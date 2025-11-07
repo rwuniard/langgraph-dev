@@ -28,8 +28,17 @@ agent = create_agent(
 async def stream_agent():
     input = {"messages": [{"role": "human", "content": "What is the weather in Tokyo?"}]}
     async for chunk in agent.astream(input, stream_mode="values"):
-        print(chunk)
-        print()
+        # Extract the last message from the chunk
+        if "messages" in chunk and chunk["messages"]:
+            last_message = chunk["messages"][-1]
+            # Print AI messages only if they have content
+            if hasattr(last_message, "type") and last_message.type == "ai":
+                if last_message.content:
+                    print(f"AI: {last_message.content}")
+            elif isinstance(last_message, dict) and last_message.get("role") == "ai":
+                content = last_message.get("content", "")
+                if content:
+                    print(f"AI: {content}")
     print()
 
 asyncio.run(stream_agent())
